@@ -1,14 +1,13 @@
 from whylogs.core.dataset_profile import DatasetProfileView  # type: ignore
 from whylogs.api.writer.whylabs import WhyLabsWriter  # type: ignore
 import pandas as pd  # type: ignore
-import os
 import _snowflake  # type: ignore
 import base64
 import multiprocessing
 
 
 # Monkey patch the multiprocessing.cpu_count() function to return 1 because
-# Snowfake security blocks it
+# Snowfake security blocks it. It's used by the python swagger client to optimize requests.
 def _patch_mutliprocess_cpu_count():
     return 1
 
@@ -24,12 +23,12 @@ class handler:
                 the whylabs_*_udf.py functions.
         """
 
-        token = _snowflake.get_generic_secret_string('whylabs_api_key')
-        os.environ["WHYLABS_DEFAULT_ORG_ID"] = 'org-JpsdM6'
-        os.environ["WHYLABS_DEFAULT_DATASET_ID"] = 'model-71'
-        os.environ["WHYLABS_API_KEY"] = token
+        writer = WhyLabsWriter(
+            org_id=_snowflake.get_generic_secret_string('whylabs_org_id'),
+            dataset_id=_snowflake.get_generic_secret_string('whylabs_dataset_id'),
+            api_key=_snowflake.get_generic_secret_string('whylabs_api_key')
+        )
 
-        writer = WhyLabsWriter()
         profile_views_col = df[0]
 
         results = []

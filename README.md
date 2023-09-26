@@ -62,7 +62,7 @@ CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION whylabs_integration
 
 ## Create the `whylogs_object` UDTF 
 
-Create a Python file with the following contents (from `./udtfs/whylogs_object_udf.py`). This version of the UDTF is designed to take in a SQL `OBJECT`` type which shows up in python as a Pandas data frame with a single series of dicts, where each dict represents a row of inputs.
+Create a Python file with the following contents (from `./udtfs/whylogs_object_udf.py`). This version of the UDTF is designed to take in a SQL `OBJECT` type which shows up in python as a Pandas data frame with a single series of dicts, where each dict represents a row of inputs.
 
 This method is the simplest since you don't have to specify the names of the rows in the UDTF (because they come along with the data) but takes more memory and has t be mapped into the right format before whylogs can process it. Check out `./udtfs/whylogs_udtf.py` for a more performant, hardcoded variant.
 
@@ -129,6 +129,7 @@ put file://./udfs/*.py @funcs/ auto_compress=false overwrite=true;
 ```
 
 Create the `whylabs_upload()` function.
+
 
 ```sql
 create or replace function whylabs_upload(profile_view varchar)

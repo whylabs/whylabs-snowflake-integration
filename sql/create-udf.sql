@@ -33,7 +33,7 @@ create or replace function whylogs_array(data array)
     ;
 
 create or replace function whylogs_object(data object)
-    returns table (profile_view varchar)
+    returns table (profile_view varchar, dataset_timestamp int) -- be careful about using variants here. Potential serialization issues.
     language python
     runtime_version = '3.10'
     packages = ('whylogs', 'pandas')
@@ -46,7 +46,7 @@ create or replace function whylabs_upload(profile_view varchar)
     language python
     runtime_version = '3.10'
     external_access_integrations = (whylabs_integration)
-    secrets = ('whylabs_api_key' = whylabs_api_key )
+    secrets = ('whylabs_api_key' = whylabs_api_key, 'whylabs_org_id' = whylabs_org_id, 'whylabs_dataset_id' = whylabs_dataset_id)
     packages = ('snowflake-snowpark-python','requests', 'whylogs', 'whylabs-client')
     handler = 'whylabs_upload_udf.handler'
     imports = ('@funcs/whylabs_upload_udf.py')
