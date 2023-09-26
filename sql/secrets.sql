@@ -1,0 +1,4 @@
+
+CREATE OR REPLACE SECRET whylabs_api_key
+  TYPE = GENERIC_STRING
+  SECRET_STRING = '3rXyFtxHnj.uOShmZhh0aVfeIyCXVdZf263emrmZwXkZ9crrkW9OeVnVu0qxWu6K';

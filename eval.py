@@ -7,7 +7,6 @@ import base64
 profile_base64 = open("./profile.base64", "r").read()
 
 decoded_profile = base64.b64decode(profile_base64)
-print(decoded_profile)
 
 
 view = DatasetProfileView.deserialize(decoded_profile)
