@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "whylogs-snowflake"
+version = "0.1.0"
+description = ""
+authors = ["Anthony Naddeo <anthony@whylabs.ai>"]
+readme = "README.md"
+packages = [{include = "whylogs_snowflake"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+whylogs = "^1.3.7"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.5.1"
+black = "^23.9.1"
+faker = "^19.6.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 140

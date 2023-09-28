@@ -1,67 +1,108 @@
-select * from demo_table where month(dataset_timestamp) > 8 limit 10;
+select count(1) from employees; 
 
 -- Run the regular UDF
-select department, profile_view, total_processed from (select * from demo_table limit 4000) , table(whylogs(id, name, department, age) over (partition by 1));
+select hire_date, profile_view, total_processed from (select * from employees limit 4000) , table(whylogs(id, name, hire_date, age) over (partition by 1));
 
 
 -- Run the regular UDF with hacky query chunking
-select department, profile_view, total_processed 
+select hire_date, profile_view, total_processed 
 from 
-    (select id, name, department, age, FLOOR(ABS(UNIFORM(0, 30, RANDOM()))) as rand from demo_table)
+    (select id, name, hire_date, age, FLOOR(ABS(UNIFORM(0, 30, RANDOM()))) as rand from employees)
     , 
-    table(whylogs(id, name, department, age) over (partition by department, rand))
+    table(whylogs(id, name, hire_date, age) over (partition by hire_date, rand))
 ;
 
 
 -- Run the chunked UDF on a subset of data
-select department, profile_view, total_processed from (select * from demo_table limit 4000) , table(whylogs_chunk(id, name, department, age) over (partition by 1));
+select hire_date, profile_view, total_processed from (select * from employees limit 4000) , table(whylogs_chunk(id, name, hire_date, age) over (partition by 1));
 
 -- Run the chunked UDF on a entire table
-select department, profile_view, total_processed from demo_table , table(whylogs_chunk(id, name, department, age) over (partition by 1));
+select hire_date, profile_view, total_processed from employees , table(whylogs_chunk(id, name, hire_date, age) over (partition by 1));
 
 -- Run the array UDF
-select department, profile_view, total_processed 
+select hire_date, profile_view, total_processed 
 from 
-    (select id, name, department, age, FLOOR(ABS(UNIFORM(0, 30, RANDOM()))) as rand from demo_table limit 40)
+    (select id, name, hire_date, age, FLOOR(ABS(UNIFORM(0, 30, RANDOM()))) as rand from employees limit 40)
     , 
-    table(whylogs_array([id, name, department, age]) over (partition by department))
+    table(whylogs_array([id, name, hire_date, age]) over (partition by hire_date))
 ;
 
 -- Run the object UDF
-select department, profile_view
+select hire_date, profile_view
 from 
-    (select department, object_construct(*) as data, FLOOR(ABS(UNIFORM(0, 29, RANDOM()))) as rand from demo_table)
+    (select hire_date, object_construct(*) as data, FLOOR(ABS(UNIFORM(0, 29, RANDOM()))) as rand from employees)
     ,
-    table(whylogs_object(data) over (partition by department, rand))
+    table(whylogs_object(data) over (partition by hire_date, rand))
 ;
 
 
-select department, object_construct(*), date_trunc('DAY', dataset_timestamp) as data from demo_table limit 10;
+select hire_date, object_construct(*), date_trunc('DAY', hire_date) as day from employees order by day desc limit 10;
+select hire_date, object_construct(*), date_trunc('DAY', hire_date) as day from employees where day='2023-09-26 00:00:00.000'::timestamp  limit 10;
+
+select count(1) from employees where date_trunc('DAY', hire_date)='2023-09-26 00:00:00.000'::timestamp;
+select count(1) from employees;
+
+select object_construct(*) from employees limit 10;
 
 
--- Without the random partitioning
-
-
-select department, to_timestamp_ntz(dataset_timestamp, 3) as dt, profile_view
+select profile_view, segment_partition, segment
 from 
-    (select department, object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, dataset_timestamp), TRUE) as data from demo_table limit 10)
+    (select state, hire_date, object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date), TRUE) as data from employees)
     ,
-    table(whylogs_object(data) over (partition by department))
-order by dt
+    table(whylogs(data) over (partition by state))
 ;
 
 
--- Upload data to whylabs after profiling
+-- Profile data with whylogs
+select profile_view, segment_partition, segment
+from 
+    (select state, hire_date, object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date), TRUE) as data from employees)
+    ,
+    table(whylogs(data) over (partition by state))
+;
+
+
+-- Profile segmented data with whylogs
+select profile_view, segment_partition, segment, rows_processed, debug_info 
+from 
+    (
+        select 
+            date_trunc('DAY', hire_date) as day,
+            state,
+            object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date)) as data
+        from employees 
+        where day>='2023-09-20 00:00:00.000'::timestamp
+        limit 3
+    )
+    ,
+    table(whylogs(data) over (partition by day, state))
+;
+
+
+-- Upload segmented data to whylabs after profiling for a single day
 with 
     profiles as (
-        select department, profile_view
+        select day, profile_view, segment_partition, segment, rows_processed, debug_info
         from 
-            (select department, object_construct(*) as data from demo_table)
+            (
+                select 
+                    date_trunc('DAY', hire_date) as day,
+                    state,
+                    object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date)) as data 
+                from employees
+                where 
+                    day >= '2023-09-10 00:00:00.000'::timestamp
+                    and
+                    day <= '2023-09-19 00:00:00.000'::timestamp
+            )
             ,
-            table(whylogs_object(data) over (partition by department)))
-
-select profiles.profile_view, result from 
+            table(whylogs(data) over (partition by day, state))
+)
+select upload_result 
+from 
     profiles
     ,
-    table(whylabs_upload(profile_view) over (partition by profile_view))
+    table(whylabs_upload(profile_view, segment_partition, segment) over (partition by day))
 ;
+
+

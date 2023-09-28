@@ -13,21 +13,26 @@ create warehouse if not exists whylogs_warehouse
 
 use warehouse whylogs_warehouse;
 
--- drop table if exists demo_table;
+-- drop table if exists employees;
 
-create table if not exists demo_table (
-    id INT PRIMARY KEY,
+create table if not exists employees (
     name STRING,
-    age INT,
-    department STRING,
-    dataset_timestamp TIMESTAMP_NTZ
+    salary INT,
+    job STRING,
+    state STRING,
+    email STRING,
+    phone STRING,
+    dob STRING,
+    ssn STRING,
+    hire_date TIMESTAMP_NTZ,
+    years_xp INT
 );
 
 -- Initially populated by ./sql/snowflake-inserts.sql
 
 -- Duplicate the table however many times
-INSERT INTO demo_table (id, name, age, department, dataset_timestamp)
-    SELECT id, name, age, department, dataset_timestamp
-    FROM demo_table;
+INSERT INTO employees (name, salary, job, state, email, phone, dob, ssn, hire_date, years_xp)
+SELECT name, salary, job, state, email, phone, dob, ssn, hire_date, years_xp FROM employees;
 
-select count(1) from demo_table;
+
+select count(1) from employees;

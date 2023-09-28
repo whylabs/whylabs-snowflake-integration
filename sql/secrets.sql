@@ -9,4 +9,12 @@ CREATE OR REPLACE SECRET whylabs_org_id
 
 CREATE OR REPLACE SECRET whylabs_dataset_id
   TYPE = GENERIC_STRING
-  SECRET_STRING = 'model-71';
+  SECRET_STRING = 'model-73';
+
+CREATE OR REPLACE SECRET segment_columns
+  TYPE = GENERIC_STRING
+  SECRET_STRING = 'STATE'; -- Must be all caps
+
+CREATE OR REPLACE SECRET data_grouper_freq
+  TYPE = GENERIC_STRING
+  SECRET_STRING = 'D';

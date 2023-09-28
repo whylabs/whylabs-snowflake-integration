@@ -1,4 +1,9 @@
 
+CREATE OR REPLACE NETWORK RULE whylabs_profiling_rule
+  MODE = EGRESS
+  TYPE = HOST_PORT
+  VALUE_LIST = ();
+
 CREATE OR REPLACE NETWORK RULE whylabs_api_network_rule
   MODE = EGRESS
   TYPE = HOST_PORT
