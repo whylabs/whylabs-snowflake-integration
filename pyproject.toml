@@ -7,8 +7,9 @@ readme = "README.md"
 packages = [{include = "whylogs_snowflake"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.10,<3.13"
 whylogs = "^1.3.7"
+pandas = "^2.1.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -16,6 +17,7 @@ mypy = "^1.5.1"
 black = "^23.9.1"
 faker = "^19.6.2"
 pinliner = {git = "https://github.com/Akrog/pinliner.git"}
+pytest = "^7.4.2"
 
 [build-system]
 requires = ["poetry-core"]

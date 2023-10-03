@@ -1,6 +1,6 @@
 from typing import Tuple, Dict, Union, Callable, TypeVar
 from whylogs.core.view import DatasetProfileView
-from whylogs.core.view.segmented_dataset_profile_view import SegmentedDatasetProfileView
+from whylogs.core.view.segmented_dataset_profile_view import Segment, SegmentedDatasetProfileView
 import time
 import base64
 import pickle
@@ -29,15 +29,15 @@ def serialize_profile_view(profile_view: Union[DatasetProfileView, SegmentedData
     return base64.b64encode(view.serialize()).decode("utf-8")
 
 
-def deserialize_profile_view(encoded_profile_view: str) -> DatasetProfileView:
+def deserialize_profile_view(encoded_profile_view: str) -> Union[DatasetProfileView, SegmentedDatasetProfileView]:
     decoded_profile = base64.b64decode(encoded_profile_view)
     return DatasetProfileView.deserialize(decoded_profile)
 
 
-def serialize_segment(segmented_view: SegmentedDatasetProfileView) -> str:
-    return base64.b64encode(pickle.dumps(segmented_view.segment)).decode("utf-8")
+def serialize_segment(segment: Segment) -> str:
+    return base64.b64encode(pickle.dumps(segment)).decode("utf-8")
 
 
-def deserialize_segment(encoded_segment: str) -> SegmentedDatasetProfileView:
+def deserialize_segment(encoded_segment: str) -> Segment:
     decoded_segment = base64.b64decode(encoded_segment)
     return pickle.loads(decoded_segment)

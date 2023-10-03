@@ -78,7 +78,7 @@ class handler:
                 for segmented_view in views_list:
                     base64_encoded_profile = serialize_profile_view(segmented_view)
                     debug_info["segment_key"] = str(segmented_view.segment.key)
-                    base64_encoded_segment = serialize_segment(segmented_view)
+                    base64_encoded_segment = serialize_segment(segmented_view.segment)
                     yield pd.DataFrame(
                         {
                             "profile_view": [base64_encoded_profile],
