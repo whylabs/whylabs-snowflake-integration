@@ -1,13 +1,12 @@
-from whylogs.core.dataset_profile import DatasetProfileView  # type: ignore
 import traceback
-from whylogs.api.writer.whylabs import WhyLabsWriter  # type: ignore
+from whylogs.api.writer.whylabs import WhyLabsWriter
 from whylogs.core.segmentation_partition import segment_on_column
 from whylogs.core.view.segmented_dataset_profile_view import SegmentedDatasetProfileView
-import pandas as pd  # type: ignore
-import pickle
-import _snowflake  # type: ignore
-import base64
+import pandas as pd
+import _snowflake
 import multiprocessing
+
+from .util import deserialize_profile_view, deserialize_segment
 
 
 # Monkey patch the multiprocessing.cpu_count() function to return 1 because
@@ -50,10 +49,10 @@ class handler:
             df: A dataframe containing all of the data for profiling.
         """
 
-        profile_views_col = df['PROFILE_VIEW']
+        profile_views_col = df["PROFILE_VIEW"]
         try:
-            segment_partitions_col = df['SEGMENT_PARTITION']
-            segments_col = df['SEGMENT']
+            segment_partitions_col = df["SEGMENT_PARTITION"]
+            segments_col = df["SEGMENT"]
         except Exception:
             segment_partitions_col = None
             segments_col = None
@@ -62,11 +61,8 @@ class handler:
             # Upload segments
             for serialized_view, partition, segment in zip(profile_views_col, segment_partitions_col, segments_col):
                 try:
-                    decoded_profile = base64.b64decode(serialized_view)
-                    view = DatasetProfileView.deserialize(decoded_profile)
-
-                    decoded_segment = base64.b64decode(segment)
-                    segment = pickle.loads(decoded_segment)
+                    view = deserialize_profile_view(serialized_view)
+                    segment = deserialize_segment(segment)
                     seg_view = SegmentedDatasetProfileView(
                         profile_view=view,
                         segment=segment,
@@ -82,8 +78,7 @@ class handler:
             results = []
             for serialized_view in profile_views_col:
                 try:
-                    decoded_profile = base64.b64decode(serialized_view)
-                    view = DatasetProfileView.deserialize(decoded_profile)
+                    view = deserialize_profile_view(serialized_view)
                     self.writer.write(file=view)
                     results.append("OK")
                     yield pd.DataFrame({"upload_result": ["OK"]})

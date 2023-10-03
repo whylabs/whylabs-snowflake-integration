@@ -1,41 +1,14 @@
-import whylogs as why  # type: ignore
-from whylogs.core.view import DatasetProfileView  # type: ignore
-from whylogs.core.segmentation_partition import ColumnMapperFunction, SegmentationPartition  # type: ignore
+import whylogs as why
+from whylogs.core.view import DatasetProfileView
+from whylogs.core.segmentation_partition import ColumnMapperFunction, SegmentationPartition
 from whylogs.core.view.segmented_dataset_profile_view import SegmentedDatasetProfileView
 from whylogs.core.schema import DatasetSchema
 
-import time
-import pandas as pd  # type: ignore
-import _snowflake  # type: ignore
-import base64
-import pickle
-from typing import List, Optional, Tuple, Any, Dict, Union
+import pandas as pd
+from typing import List, Dict, Union
 
-
-def get_segment_columns_config() -> Optional[List[str]]:
-    try:
-        csv = _snowflake.get_generic_secret_string("segment_columns")
-        return csv.split(",")
-    except Exception:
-        return None
-
-
-def get_freq_config() -> str:
-    try:
-        return _snowflake.get_generic_secret_string("data_grouper_freq")
-    except Exception:
-        return "D"
-
-
-def timeit(fn) -> Tuple[Any, float]:
-    start = time.perf_counter()
-    result = fn()
-    end = time.perf_counter()
-    return result, end - start
-
-
-def format_debug_info(perf_times: Dict[str, Union[int, str, float]]) -> str:
-    return "\n".join([f"{k}: {round(v, 3) if type(v) == float else v}" for k, v in perf_times.items()])
+from .config import get_freq_config, get_segment_columns_config
+from .util import serialize_profile_view, serialize_segment, timeit, format_debug_info
 
 
 date_col = "DATASET_TIMESTAMP"
@@ -69,8 +42,12 @@ class handler:
         # TODO This used to make me get the first series with df[0] and then randomly changed to df['DATA']
         df_norm, debug_info["norm_time"] = timeit(lambda: pd.DataFrame(list(df["DATA"])))
 
-        df_norm[date_col], debug_info["date_conversion_time"] = timeit(lambda: pd.to_datetime(df_norm[date_col], unit="ms"))
-        grouped, debug_info["grouping_time"] = timeit(lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq)))
+        df_norm[date_col], debug_info["date_conversion_time"] = timeit(
+            lambda: pd.to_datetime(df_norm[date_col], unit="ms")
+        )
+        grouped, debug_info["grouping_time"] = timeit(
+            lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq))
+        )
         debug_info["group_count"] = len(grouped)
 
         if segment_columns is not None:
@@ -80,7 +57,9 @@ class handler:
 
             if df_norm[date_col].isna().values.any():
                 # TODO document this in the readme
-                raise ValueError("Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query.")
+                raise ValueError(
+                    "Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query."
+                )
 
             multi_column_segments = {segmentation_partition.name: segmentation_partition}
             dataset_schema = DatasetSchema(segments=multi_column_segments)
@@ -92,14 +71,14 @@ class handler:
                 ms_epoch = date_group.timestamp() * 1000
                 ms_epoch_datetime = pd.to_datetime(ms_epoch, unit="ms", utc=True).to_pydatetime()
 
-                result_set = why.log(df_norm, schema=dataset_schema)
+                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm, schema=dataset_schema))
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 views_list: List[SegmentedDatasetProfileView] = result_set.get_writables()
                 for segmented_view in views_list:
-                    base64_encoded_profile = base64.b64encode(segmented_view.profile_view.serialize()).decode("utf-8")
+                    base64_encoded_profile = serialize_profile_view(segmented_view)
                     debug_info["segment_key"] = str(segmented_view.segment.key)
-                    base64_encoded_segment = base64.b64encode(pickle.dumps(segmented_view.segment)).decode("utf-8")
+                    base64_encoded_segment = serialize_segment(segmented_view)
                     yield pd.DataFrame(
                         {
                             "profile_view": [base64_encoded_profile],
@@ -125,7 +104,7 @@ class handler:
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 view: DatasetProfileView = result_set.profile().view()
-                base64_encoded_profile = base64.b64encode(view.serialize()).decode("utf-8")
+                base64_encoded_profile = serialize_profile_view(view)
                 yield pd.DataFrame(
                     {
                         "profile_view": [base64_encoded_profile],
