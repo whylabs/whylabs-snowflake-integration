@@ -100,7 +100,7 @@ jobs:
   release:
     name: Create a release
     if: ${{ github.event_name == 'push' }}
-    needs: [build, setup]
+    needs: [build, setup, upload]
     runs-on: ubuntu-latest
 
     steps:
