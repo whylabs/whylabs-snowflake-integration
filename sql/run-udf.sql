@@ -69,20 +69,20 @@ from
         select 
             date_trunc('DAY', hire_date) as day,
             state,
-            object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date)) as data
+            object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date)) as data,
+            FLOOR(ABS(UNIFORM(0, 9, RANDOM()))) as rand
         from employees 
-        where day>='2023-09-20 00:00:00.000'::timestamp
-        limit 3
+        where day='2023-09-20 00:00:00.000'::timestamp
     )
     ,
-    table(whylogs(data) over (partition by day, state))
+    table(whylogs(data) over (partition by day, state, rand))
 ;
 
 
 -- Upload segmented data to whylabs after profiling for a single day
 with 
     profiles as (
-        select day, profile_view, segment_partition, segment, rows_processed, debug_info
+        select day, state, profile_view, segment_partition, segment, rows_processed, debug_info
         from 
             (
                 select 
@@ -90,10 +90,7 @@ with
                     state,
                     object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date)) as data 
                 from employees
-                where 
-                    day >= '2023-09-10 00:00:00.000'::timestamp
-                    and
-                    day <= '2023-09-19 00:00:00.000'::timestamp
+                where day = '2023-09-10 00:00:00.000'::timestamp
             )
             ,
             table(whylogs(data) over (partition by day, state))
@@ -102,7 +99,7 @@ select upload_result
 from 
     profiles
     ,
-    table(whylabs_upload(profile_view, segment_partition, segment) over (partition by day))
+    table(whylabs_upload(profile_view, segment_partition, segment) over (partition by day, state))
 ;
 
 

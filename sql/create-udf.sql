@@ -24,6 +24,8 @@ create or replace function whylogs(data object)
     imports = ('@funcs/whylogs_udf.py')
     ;
 
+
+
 -- drop function whylabs_upload(varchar, varchar, varchar);
 
 create or replace function whylabs_upload(profile_view varchar, segment_partition varchar, segment varchar)
