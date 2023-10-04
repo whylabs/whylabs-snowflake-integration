@@ -1,8 +1,5 @@
 name: Workflow
 
-env:
-  DOC_DIR: docs/_build/
-
 on:
   push:
     branches: ["master"]
@@ -83,3 +80,23 @@ jobs:
           AWS_REGION: "us-west-2"
           SOURCE_DIR: "dist"
           DEST_DIR: "udfs/v1/archive/${{ github.sha }}"
+
+  release:
+    name: Create a release
+    if: ${{ github.event_name == 'push' }}
+    needs: upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.sha }}
+          release_name: Release ${{ github.sha }}
+          draft: false
+          prerelease: false
