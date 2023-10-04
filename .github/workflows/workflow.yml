@@ -10,11 +10,14 @@ jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.short_sha_setup.outputs.short_sha }}
     steps:
-      - name: Get short SHA
-        id: short-sha
-        run: |
-          echo "::set-output name=short-sha::$(git rev-parse --short ${{ github.sha }})"
+      - name: Save short sha
+        shell: bash
+        id: short_sha_setup
+        run: echo "short_sha=foo" >> "$GITHUB_OUTPUT"
+
 
   build:
     name: Build and run all tests and checks
@@ -24,6 +27,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: test short sha
+        run: echo "${{ needs.setup.outputs.short_sha}}"
 
       - uses: actions/setup-python@v4
         name: Install Python
@@ -62,7 +68,7 @@ jobs:
     timeout-minutes: 30
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, setup]
 
     steps:
       - uses: actions/checkout@v3
@@ -89,12 +95,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-west-2"
           SOURCE_DIR: "dist"
-          DEST_DIR: "udfs/v1/archive/${{ steps.setup.outputs.short-sha }}"
+          DEST_DIR: "udfs/v1/archive/${{ needs.setup.outputs.short_sha}}"
 
   release:
     name: Create a release
     if: ${{ github.event_name == 'push' }}
-    needs: upload
+    needs: [build, setup]
     runs-on: ubuntu-latest
 
     steps:
@@ -106,7 +112,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.setup.outputs.short-sha }}
-          release_name: Release ${{ steps.setup.outputs.short-sha }}
+          tag_name: ${{ needs.setup.outputs.short_sha}}
+          release_name: Release ${{ needs.setup.outputs.short_sha}}
           draft: false
           prerelease: false
