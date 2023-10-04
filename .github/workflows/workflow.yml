@@ -125,9 +125,10 @@ jobs:
               - s3://whylabs-snowflake-udfs/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylogs_udf.py
               - s3://whylabs-snowflake-udfs/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylabs_upload_udf.py
 
-            Create the latest functions in Snowflake
+            Create the latest functions in Snowflake like so. Make sure to see the [official doc page](https://docs.whylabs.ai/docs/integrations-snowflake)
+            for all of the instructions. This snippet doesn't cover creating the function integrations, network rules and secrets.
 
-            ```sql`
+            ```sql
             CREATE OR REPLACE STORAGE INTEGRATION whylabs_s3_integration
               TYPE = EXTERNAL_STAGE
               STORAGE_PROVIDER = 'S3'
