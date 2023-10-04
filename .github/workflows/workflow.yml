@@ -79,7 +79,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: "us-west-2"
           SOURCE_DIR: "dist"
-          DEST_DIR: "udfs/v1/archive/${{ github.sha }}"
+          DEST_DIR: "udfs/v1/archive/${{ github.ref }}"
 
   release:
     name: Create a release
@@ -96,7 +96,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
-          release_name: Release ${{ github.sha }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
