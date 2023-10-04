@@ -4,7 +4,7 @@ from typing import List
 from whylogs.core.segmentation_partition import ColumnMapperFunction, SegmentationPartition
 from whylogs.core.schema import DatasetSchema
 from whylogs.core.view.segmented_dataset_profile_view import SegmentedDatasetProfileView
-from udfs.util import serialize_profile_view, deserialize_profile_view, serialize_segment, deserialize_segment
+from udfs.udf_utils import serialize_profile_view, deserialize_profile_view, serialize_segment, deserialize_segment
 
 
 def test_profile_serialization():

@@ -25,9 +25,6 @@ create or replace function whylogs(data object)
     ;
 
 
-
--- drop function whylabs_upload(varchar, varchar, varchar);
-
 create or replace function whylabs_upload(profile_view varchar, segment_partition varchar, segment varchar)
     returns table (upload_result varchar)
     language python

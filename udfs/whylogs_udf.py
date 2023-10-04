@@ -8,7 +8,7 @@ import pandas as pd
 from typing import List, Dict, Union
 
 from .config import get_freq_config, get_segment_columns_config
-from .util import serialize_profile_view, serialize_segment, timeit, format_debug_info
+from .udf_utils import serialize_profile_view, serialize_segment, timeit, format_debug_info
 
 
 date_col = "DATASET_TIMESTAMP"

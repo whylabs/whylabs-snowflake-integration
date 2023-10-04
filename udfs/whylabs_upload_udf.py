@@ -6,7 +6,7 @@ import pandas as pd
 import _snowflake
 import multiprocessing
 
-from .util import deserialize_profile_view, deserialize_segment
+from .udf_utils import deserialize_profile_view, deserialize_segment
 
 
 # Monkey patch the multiprocessing.cpu_count() function to return 1 because
