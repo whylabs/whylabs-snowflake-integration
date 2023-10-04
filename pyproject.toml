@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Anthony Naddeo <anthony@whylabs.ai>"]
 readme = "README.md"
-packages = [{include = "whylogs_snowflake"}]
+packages = []
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
@@ -18,6 +18,7 @@ black = "^23.9.1"
 faker = "^19.6.2"
 pinliner = {git = "https://github.com/Akrog/pinliner.git"}
 pytest = "^7.4.2"
+autoflake = "2.0.1"
 
 [build-system]
 requires = ["poetry-core"]
