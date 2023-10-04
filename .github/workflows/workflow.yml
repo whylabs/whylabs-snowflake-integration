@@ -171,6 +171,13 @@ jobs:
                 IMPORTS = ('@whylabs_udf_stage/v1/latest/whylabs_upload_udf.py')
             ;
             ````
+
+      - name: Download udf artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: udfs
+          path: ./dist
+
       - name: Zip up the dist folder
         run: zip -r udfs.zip dist
 
