@@ -13,7 +13,7 @@ all: $(project_name) ./dist/setup.sql
 udfs: $(outputs)
 
 $(setup_sql): build_dir ./sql/*.sql
-	rm $(setup_sql) && touch $(setup_sql)
+	rm -f $(setup_sql) && touch $(setup_sql)
 
 	echo "-- Set up network rules" >> $(setup_sql)
 	cat ./sql/networking.sql >> $(setup_sql)
