@@ -62,6 +62,16 @@ from
 ;
 
 
+        select  count(1)
+        from employees
+        where
+            date_trunc('DAY', hire_date) >='2023-09-20 00:00:00.000'::timestamp
+            and
+            date_trunc('DAY', hire_date) <= '2023-09-22 00:00:00.000'::timestamp
+            ;
+
+
+
 -- Profile segmented data with whylogs
 select profile_view, segment_partition, segment, rows_processed, debug_info 
 from 
@@ -71,8 +81,11 @@ from
             state,
             object_insert(object_construct(*), 'DATASET_TIMESTAMP', date_part(EPOCH_MILLISECONDS, hire_date)) as data,
             FLOOR(ABS(UNIFORM(0, 9, RANDOM()))) as rand
-        from employees 
-        where day='2023-09-20 00:00:00.000'::timestamp
+        from employees
+        where --day='2023-09-20 00:00:00.000'::timestamp
+            date_trunc('DAY', hire_date) >='2023-09-20 00:00:00.000'::timestamp
+            and
+            date_trunc('DAY', hire_date) <= '2023-09-22 00:00:00.000'::timestamp
     )
     ,
     table(whylogs(data) over (partition by day, state, rand))

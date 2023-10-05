@@ -1,8 +1,4 @@
-use role sysadmin;
-
-create or replace database whylogs_demo;
-
-use whylogs_demo;
+-- use role sysadmin;
 
 create warehouse if not exists whylogs_warehouse
     warehouse_size = 'XSMALL'
@@ -11,7 +7,6 @@ create warehouse if not exists whylogs_warehouse
     auto_resume = true
     initially_suspended = true;
 
-use warehouse whylogs_warehouse;
 
 create or replace function FAKE(locale varchar,provider varchar,parameters variant)
 returns variant

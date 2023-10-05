@@ -1,15 +1,15 @@
 
 CREATE OR REPLACE SECRET whylabs_api_key
   TYPE = GENERIC_STRING
-  SECRET_STRING = '3rXyFtxHnj.uOShmZhh0aVfeIyCXVdZf263emrmZwXkZ9crrkW9OeVnVu0qxWu6K';
+  SECRET_STRING = 'xxxxx.xxxxxxxxxxxxxx';
 
 CREATE OR REPLACE SECRET whylabs_org_id
   TYPE = GENERIC_STRING
-  SECRET_STRING = 'org-JpsdM6';
+  SECRET_STRING = 'org-xxxxx';
 
 CREATE OR REPLACE SECRET whylabs_dataset_id
   TYPE = GENERIC_STRING
-  SECRET_STRING = 'model-73';
+  SECRET_STRING = 'model-xx';
 
 CREATE OR REPLACE SECRET segment_columns
   TYPE = GENERIC_STRING
