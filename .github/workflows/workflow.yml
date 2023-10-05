@@ -52,8 +52,8 @@ jobs:
       - name: Run test
         run: make test
 
-      - name: Build udfs
-        run: make udfs
+      - name: Build
+        run: make all
 
       - name: Upload udf artifacts for upload later
         uses: actions/upload-artifact@v2
