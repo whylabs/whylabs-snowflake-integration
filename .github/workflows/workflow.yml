@@ -113,7 +113,10 @@ jobs:
 
       - name: Get sql snippet
         id: sql_snippet
-        run: echo "sql=$(cat ./dist/create.sql)" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          TXT=$(cat ./dist/create.sql)
+          echo "sql=$TXT" >> $GITHUB_OUTPUT
 
       - name: Create Release
         id: create_release
