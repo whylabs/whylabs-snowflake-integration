@@ -116,7 +116,9 @@ jobs:
         shell: bash
         run: |
           TXT=$(cat ./dist/setup.sql)
-          echo "sql=$TXT" >> $GITHUB_OUTPUT
+          echo "sql<<EOF" >> $GITHUB_OUTPUT
+          echo "$TXT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         id: create_release
