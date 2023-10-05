@@ -1,14 +1,22 @@
 project_name = udfs
 build_dir = dist
-udf_dir = udfs
 outputs = $(build_dir)/whylogs_udf.py $(build_dir)/whylabs_upload_udf.py
 src := $(shell find $(project_name)/ -name "*.py" -type f)
 
-.PHONY: udfs lint format format-fix setup test help populate_demo_table
+.PHONY: udfs lint format format-fix setup test help populate_demo_table all
 
 default:help
 
+all: $(project_name) ./dist/setup.sql
+
 udfs: $(outputs)
+
+./dist/setup.sql: build_dir ./sql/*.sql
+	touch ./dist/setup.sql
+	cat ./sql/networking.sql >> ./dist/setup.sql
+	cat ./sql/integrations.sql >> ./dist/setup.sql
+	cat ./sql/storage.sql >> ./dist/setup.sql
+	cat ./sql/create-udf.sql >> ./dist/setup.sql
 
 build_dir:
 	mkdir -p $(build_dir)

@@ -21,7 +21,6 @@ jobs:
           SHA=$(git rev-parse --short=20 ${{ github.sha }})
           echo "short_sha=$SHA" >> "$GITHUB_OUTPUT"
 
-
   build:
     name: Build and run all tests and checks
     timeout-minutes: 30
@@ -106,6 +105,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Download udf artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: udfs
+          path: ./dist
+
+      - name: Get sql snippet
+        id: sql_snippet
+        run: echo "sql=$(cat ./dist/create.sql)" >> $GITHUB_OUTPUT
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -117,72 +126,38 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            Latest UDF s3 paths
+            ## Publshed S3 Paths
+            - Latest UDFs
+              - `s3://whylabs-snowflake-udfs/udfs/v1/latest/create.sql`
               - `s3://whylabs-snowflake-udfs/udfs/v1/latest/whylogs_udf.py`
               - `s3://whylabs-snowflake-udfs/udfs/v1/latest/whylabs_upload_udf.py`
-
-            Version tagged UDF s3 paths
+            - Version tagged UDFs
+              - `s3://whylabs-snowflake-udfs/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/create.sql`
               - `s3://whylabs-snowflake-udfs/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylogs_udf.py`
               - `s3://whylabs-snowflake-udfs/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylabs_upload_udf.py`
+
+            ## Publishd HTTP paths
+            - Latest UDFs
+              - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/latest/create.sql`
+              - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/latest/whylogs_udf.py`
+              - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/latest/whylabs_upload_udf.py`
+            - Version tagged UDFs
+              - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/create.sql`
+              - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylogs_udf.py`
+              - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylabs_upload_udf.py`
 
             Create the latest functions in Snowflake like so. Make sure to see the [official doc page](https://docs.whylabs.ai/docs/integrations-snowflake)
             for all of the instructions. This snippet doesn't cover creating the function integrations, network rules and secrets.
 
             ```sql
-            CREATE OR REPLACE STORAGE INTEGRATION whylabs_s3_integration
-              TYPE = EXTERNAL_STAGE
-              STORAGE_PROVIDER = 'S3'
-              ENABLED = TRUE
-              STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::207285235248:role/public-snowflake-role'
-              STORAGE_ALLOWED_LOCATIONS = ('s3://whylabs-snowflake-udfs/udfs/')
-            ;
-
-            CREATE OR REPLACE STAGE whylabs_udf_stage
-              STORAGE_INTEGRATION = whylabs_s3_integration
-              URL = 's3://whylabs-snowflake-udfs/udfs/'
-            ;
-
-            CREATE OR REPLACE FUNCTION whylogs(data object)
-                RETURNS TABLE (
-                    profile_view varchar,
-                    dataset_timestamp int,
-                    segment_partition varchar,
-                    segment varchar,
-                    rows_processed int,
-                    debug_info varchar
-                )
-                LANGUAGE python
-                RUNTIME_VERSION = '3.10'
-                EXTERNAL_ACCESS_INTEGRATIONS = (whylabs_integration)
-                SECRETS = ('data_grouper_freq' = data_grouper_freq, 'segment_columns' = segment_columns)
-                PACKAGES = ('snowflake-snowpark-python', 'whylogs', 'pandas')
-                HANDLER = 'whylogs_udf.handler'
-                IMPORTS = ('@whylabs_udf_stage/v1/latest/whylogs_udf.py')
-            ;
-
-            CREATE OR REPLACE FUNCTION whylabs_upload(profile_view varchar, segment_partition varchar, segment varchar)
-                RETURNS TABLE (upload_result varchar)
-                LANGUAGE python
-                RUNTIME_VERSION = '3.10'
-                EXTERNAL_ACCESS_INTEGRATIONS = (whylabs_upload_integration)
-                SECRETS = ('whylabs_api_key' = whylabs_api_key, 'whylabs_org_id' = whylabs_org_id, 'whylabs_dataset_id' = whylabs_dataset_id)
-                PACKAGES = ('snowflake-snowpark-python', 'requests', 'whylogs', 'whylabs-client')
-                HANDLER = 'whylabs_upload_udf.handler'
-                IMPORTS = ('@whylabs_udf_stage/v1/latest/whylabs_upload_udf.py')
-            ;
+            ${{ steps.sql_snippet.outputs.sql }}
             ````
-
-      - name: Download udf artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: udfs
-          path: ./dist
 
       - name: Zip up the dist folder
         run: zip -r udfs.zip dist
 
       - name: Upload Release Asset
-        id: upload-release-asset 
+        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

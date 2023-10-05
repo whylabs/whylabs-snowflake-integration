@@ -1,8 +1,6 @@
 
-use role accountadmin;
-
 CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION whylabs_integration
-  ALLOWED_NETWORK_RULES = (whylabs_profiling_rule) -- Using e
+  ALLOWED_NETWORK_RULES = (whylabs_profiling_rule)
   ALLOWED_AUTHENTICATION_SECRETS = (segment_columns, data_grouper_freq)
   ENABLED = true;
 

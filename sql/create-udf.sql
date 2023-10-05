@@ -1,5 +1,3 @@
-use schema WHYLOGS_DEMO.PUBLIC;
-
 create or replace function whylogs(data object)
     returns table (
         profile_view varchar,
