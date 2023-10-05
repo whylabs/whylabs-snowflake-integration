@@ -152,10 +152,8 @@ jobs:
               - `https://whylabs-snowflake-udfs.s3.us-west-2.amazonaws.com/udfs/v1/archive/${{ needs.setup.outputs.short_sha }}/whylabs_upload_udf.py`
 
             ## Snowflake SQL
-            Create the latest functions in Snowflake like so. Make sure to see
-            the [official doc page](https://docs.whylabs.ai/docs/integrations-snowflake) for all
-            of the instructions. This snippet doesn't cover creating the
-            required secrets and secret configuration.
+
+            Create the latest functions in Snowflake like so. Make sure to see the [official doc page](https://docs.whylabs.ai/docs/integrations-snowflake) for all of the instructions. This snippet doesn't cover creating the required secrets and secret configuration.
 
             ```sql
             ${{ steps.sql_snippet.outputs.sql }}

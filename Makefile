@@ -2,6 +2,7 @@ project_name = udfs
 build_dir = dist
 outputs = $(build_dir)/whylogs_udf.py $(build_dir)/whylabs_upload_udf.py
 src := $(shell find $(project_name)/ -name "*.py" -type f)
+setup_sql = ./dist/setup.sql
 
 .PHONY: udfs lint format format-fix setup test help populate_demo_table all
 
@@ -11,12 +12,20 @@ all: $(project_name) ./dist/setup.sql
 
 udfs: $(outputs)
 
-./dist/setup.sql: build_dir ./sql/*.sql
-	touch ./dist/setup.sql
-	cat ./sql/networking.sql >> ./dist/setup.sql
-	cat ./sql/integrations.sql >> ./dist/setup.sql
-	cat ./sql/storage.sql >> ./dist/setup.sql
-	cat ./sql/create-udf.sql >> ./dist/setup.sql
+$(setup_sql): build_dir ./sql/*.sql
+	rm $(setup_sql) && touch $(setup_sql)
+
+	echo "-- Set up network rules" >> $(setup_sql)
+	cat ./sql/networking.sql >> $(setup_sql)
+
+	echo "\n-- Set up integrations" >> $(setup_sql)
+	cat ./sql/integrations.sql >> $(setup_sql)
+
+	echo "\n-- Set up storage integrations" >> $(setup_sql)
+	cat ./sql/storage.sql >> $(setup_sql)
+
+	echo "\n-- Create the UDFs" >> $(setup_sql)
+	cat ./sql/create-udf.sql >> $(setup_sql)
 
 build_dir:
 	mkdir -p $(build_dir)
