@@ -42,12 +42,8 @@ class handler:
         # TODO This used to make me get the first series with df[0] and then randomly changed to df['DATA']
         df_norm, debug_info["norm_time"] = timeit(lambda: pd.DataFrame(list(df["DATA"])))
 
-        df_norm[date_col], debug_info["date_conversion_time"] = timeit(
-            lambda: pd.to_datetime(df_norm[date_col], unit="ms")
-        )
-        grouped, debug_info["grouping_time"] = timeit(
-            lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq))
-        )
+        df_norm[date_col], debug_info["date_conversion_time"] = timeit(lambda: pd.to_datetime(df_norm[date_col], unit="ms"))
+        grouped, debug_info["grouping_time"] = timeit(lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq)))
         debug_info["group_count"] = len(grouped)
 
         if segment_columns is not None:
@@ -57,9 +53,7 @@ class handler:
 
             if df_norm[date_col].isna().values.any():
                 # TODO document this in the readme
-                raise ValueError(
-                    "Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query."
-                )
+                raise ValueError("Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query.")
 
             multi_column_segments = {segmentation_partition.name: segmentation_partition}
             dataset_schema = DatasetSchema(segments=multi_column_segments)
@@ -71,7 +65,7 @@ class handler:
                 ms_epoch = date_group.timestamp() * 1000
                 ms_epoch_datetime = pd.to_datetime(ms_epoch, unit="ms", utc=True).to_pydatetime()
 
-                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm, schema=dataset_schema))
+                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm.drop(date_col, axis=1), schema=dataset_schema))
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 views_list: List[SegmentedDatasetProfileView] = result_set.get_writables()
@@ -100,7 +94,7 @@ class handler:
 
                 # Log the dataframe with whylogs and create a profile
 
-                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm))
+                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm.drop(date_col, axis=1)))
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 view: DatasetProfileView = result_set.profile().view()

@@ -3,6 +3,7 @@ build_dir = dist
 outputs = $(build_dir)/whylogs_udf.py $(build_dir)/whylabs_upload_udf.py
 src := $(shell find $(project_name)/ -name "*.py" -type f)
 setup_sql = ./dist/setup.sql
+random_alphanum=$(shell cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 
 .PHONY: udfs lint format format-fix setup test help populate_demo_table all
 
@@ -11,6 +12,16 @@ default:help
 all: $(project_name) ./dist/setup.sql
 
 udfs: $(outputs)
+
+upload-dev: all  ## Upload dev UDFs to the public bucket
+	aws s3 sync "./$(build_dir)/" s3://whylabs-snowflake-udfs/udfs/dev/$(random_alphanum)/
+	@echo "Uploaded to s3://whylabs-snowflake-udfs/udfs/dev/$(random_alphanum)"
+	@echo "whylogs_udf: '@whylabs_udf_stage/dev/$(random_alphanum)/whylogs_udf.py'" 
+	@echo "whylabs_upload_udf: '@whylabs_udf_stage/dev/$(random_alphanum)/whylogs_upload_udf.py'" 
+
+upload-dev-local: all  ## Upload dev UDFs to the Snowflake account
+	snowsql -c whylabs --query "create stage if not exists dev;" 
+	snowsql -c whylabs --query "put file://./dist/*.py @dev/ auto_compress=false overwrite=true;" 
 
 $(setup_sql): build_dir ./sql/*.sql
 	rm -f $(setup_sql) && touch $(setup_sql)
