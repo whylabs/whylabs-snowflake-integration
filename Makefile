@@ -5,11 +5,11 @@ src := $(shell find $(project_name)/ -name "*.py" -type f)
 setup_sql = ./dist/setup.sql
 random_alphanum=$(shell cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 
-.PHONY: udfs lint format format-fix setup test help populate_demo_table all
+.PHONY: udfs lint format format-fix setup test help populate_demo_table all version_py ./udfs/version.py
 
 default:help
 
-all: $(project_name) ./dist/setup.sql
+all: $(project_name) ./dist/setup.sql  ## Build the UDFs and the setup script
 
 udfs: $(outputs)
 
@@ -38,14 +38,19 @@ $(setup_sql): build_dir ./sql/*.sql
 	echo "\n-- Create the UDFs" >> $(setup_sql)
 	cat ./sql/create-udf.sql >> $(setup_sql)
 
+./udfs/version.py:
+	poetry run python ./scripts/create_version.py $(VERSION) > ./udfs/version.py
+
+version_py: ./udfs/version.py  ## Generate the version python module
+
 build_dir:
 	mkdir -p $(build_dir)
 
 $(build_dir)/whylogs_udf.py: udfs/whylogs_udf.py build_dir
-	python ./scripts/merger.py --entry udfs/whylogs_udf.py --output $(build_dir)/whylogs_udf.py
+	poetry run python ./scripts/merger.py --entry udfs/whylogs_udf.py --output $(build_dir)/whylogs_udf.py
 
 $(build_dir)/whylabs_upload_udf.py: udfs/whylabs_upload_udf.py build_dir
-	python ./scripts/merger.py --entry udfs/whylabs_upload_udf.py --output $(build_dir)/whylabs_upload_udf.py
+	poetry run python ./scripts/merger.py --entry udfs/whylabs_upload_udf.py --output $(build_dir)/whylabs_upload_udf.py
 
 lint: ## Check for type issues with mypy
 	poetry run mypy $(project_name)/

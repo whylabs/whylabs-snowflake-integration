@@ -8,7 +8,7 @@ import pandas as pd
 from typing import List, Dict, Union
 
 from .config import get_freq_config, get_segment_columns_config
-from .udf_utils import serialize_profile_view, serialize_segment, timeit, format_debug_info
+from .udf_utils import attach_metadata, serialize_profile_view, serialize_segment, timeit, format_debug_info
 
 
 date_col = "DATASET_TIMESTAMP"
@@ -42,8 +42,12 @@ class handler:
         # TODO This used to make me get the first series with df[0] and then randomly changed to df['DATA']
         df_norm, debug_info["norm_time"] = timeit(lambda: pd.DataFrame(list(df["DATA"])))
 
-        df_norm[date_col], debug_info["date_conversion_time"] = timeit(lambda: pd.to_datetime(df_norm[date_col], unit="ms"))
-        grouped, debug_info["grouping_time"] = timeit(lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq)))
+        df_norm[date_col], debug_info["date_conversion_time"] = timeit(
+            lambda: pd.to_datetime(df_norm[date_col], unit="ms")
+        )
+        grouped, debug_info["grouping_time"] = timeit(
+            lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq))
+        )
         debug_info["group_count"] = len(grouped)
 
         if segment_columns is not None:
@@ -53,7 +57,9 @@ class handler:
 
             if df_norm[date_col].isna().values.any():
                 # TODO document this in the readme
-                raise ValueError("Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query.")
+                raise ValueError(
+                    "Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query."
+                )
 
             multi_column_segments = {segmentation_partition.name: segmentation_partition}
             dataset_schema = DatasetSchema(segments=multi_column_segments)
@@ -65,11 +71,14 @@ class handler:
                 ms_epoch = date_group.timestamp() * 1000
                 ms_epoch_datetime = pd.to_datetime(ms_epoch, unit="ms", utc=True).to_pydatetime()
 
-                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm.drop(date_col, axis=1), schema=dataset_schema))
+                result_set, debug_info["profile_time"] = timeit(
+                    lambda: why.log(df_norm.drop(date_col, axis=1), schema=dataset_schema)
+                )
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 views_list: List[SegmentedDatasetProfileView] = result_set.get_writables()
                 for segmented_view in views_list:
+                    attach_metadata(segmented_view._profile_view)
                     base64_encoded_profile = serialize_profile_view(segmented_view)
                     debug_info["segment_key"] = str(segmented_view.segment.key)
                     base64_encoded_segment = serialize_segment(segmented_view.segment)
@@ -98,6 +107,7 @@ class handler:
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 view: DatasetProfileView = result_set.profile().view()
+                attach_metadata(view)
                 base64_encoded_profile = serialize_profile_view(view)
                 yield pd.DataFrame(
                     {
