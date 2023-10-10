@@ -4,9 +4,16 @@ from whylogs.core.view.segmented_dataset_profile_view import Segment, SegmentedD
 import time
 import base64
 import pickle
+from .version import get_version
 
 
 T = TypeVar("T")
+
+
+def attach_metadata(profile: DatasetProfileView):
+    profile._metadata = profile._metadata or {}
+    profile._metadata["integration"] = "snowflake"
+    profile._metadata["integration_version"] = get_version()
 
 
 def timeit(fn: Callable[[], T]) -> Tuple[T, float]:
