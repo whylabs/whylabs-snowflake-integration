@@ -19,6 +19,7 @@ faker = "^19.6.2"
 pinliner = {git = "https://github.com/Akrog/pinliner.git"}
 pytest = "^7.4.2"
 autoflake = "2.0.1"
+astunparse = "^1.6.3"
 
 [build-system]
 requires = ["poetry-core"]

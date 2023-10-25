@@ -8,3 +8,4 @@ view = DatasetProfileView.deserialize(decoded_profile)
 
 print(view.to_pandas())
 print(view._metadata)
+print(view.dataset_timestamp)

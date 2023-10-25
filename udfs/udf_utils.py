@@ -5,6 +5,7 @@ import time
 import base64
 import pickle
 from .version import get_version
+import pandas as pd
 
 
 T = TypeVar("T")
@@ -48,3 +49,7 @@ def serialize_segment(segment: Segment) -> str:
 def deserialize_segment(encoded_segment: str) -> Segment:
     decoded_segment = base64.b64decode(encoded_segment)
     return pickle.loads(decoded_segment)
+
+
+def drop_metadata_columns(df: "pd.DataFrame") -> pd.DataFrame:
+    return df.drop(["SEGMENT_COLUMNS", "GROUP_BY_FREQUENCY", "DATASET_TIMESTAMP"], axis=1, errors="ignore")
