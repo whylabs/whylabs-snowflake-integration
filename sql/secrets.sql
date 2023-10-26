@@ -6,15 +6,3 @@ CREATE OR REPLACE SECRET whylabs_api_key
 CREATE OR REPLACE SECRET whylabs_org_id
   TYPE = GENERIC_STRING
   SECRET_STRING = 'org-xxxxx';
-
-CREATE OR REPLACE SECRET whylabs_dataset_id
-  TYPE = GENERIC_STRING
-  SECRET_STRING = 'model-xx';
-
-CREATE OR REPLACE SECRET segment_columns
-  TYPE = GENERIC_STRING
-  SECRET_STRING = 'STATE'; -- Must be all caps
-
-CREATE OR REPLACE SECRET data_grouper_freq
-  TYPE = GENERIC_STRING
-  SECRET_STRING = 'D';

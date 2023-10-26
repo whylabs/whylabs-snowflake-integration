@@ -8,7 +8,14 @@ import pandas as pd
 from typing import List, Dict, Union
 
 from .config import get_freq_config, get_segment_columns_config
-from .udf_utils import attach_metadata, serialize_profile_view, serialize_segment, timeit, format_debug_info
+from .udf_utils import (
+    attach_metadata,
+    serialize_profile_view,
+    serialize_segment,
+    timeit,
+    format_debug_info,
+    drop_metadata_columns,
+)
 
 
 date_col = "DATASET_TIMESTAMP"
@@ -19,35 +26,30 @@ class handler:
         """
         Profile data with whylogs.
 
-        The input to this UDF should be an object on the SQL side. The object needs to have a timestamp column as well.
+        The input to this UDF should be an object on the SQL side. The object should have certain additional properties
+        that influence the results.
 
         - DATASET_TIMESTAMP (int): The millisecond epoch time for that row. If this column is present then the udf will
             use it to group data into profiles. You can get this from a timestamp column in your query with
             `date_part(EPOCH_MILLISECONDS, dataset_timestamp)`.
-
-        You can provide various configuration as secrets.
-
-        - data_grouper_freq (str): The pandas grouper frequency to group data into profiles. Defaults to 'D' for daily.
-            You should make this match the type of model you have in WhyLabs.
-        - segment_columns (str): A comma separated list of columns to use to segment data into profiles. Segments aren't
-            enabled by default.
+        - SEGMENT_COLUMNS (string): A comma separated list of columns to use to segment data. For example, `state,city`.
+        - GROUP_BY_FREQUENCY (string): The pandas grouper frequency to group data into profiles. Defaults to 'D' for
+            daily. You should make this match the type of model you have in WhyLabs.
 
         Args:
             df: A dataframe containing all of the data for profiling.
         """
-        freq = get_freq_config()
-        segment_columns = get_segment_columns_config()
         debug_info: Dict[str, Union[str, int, float]] = {}
 
-        # TODO This used to make me get the first series with df[0] and then randomly changed to df['DATA']
-        df_norm, debug_info["norm_time"] = timeit(lambda: pd.DataFrame(list(df["DATA"])))
+        # TODO This used to get the first series with df[0] and then randomly changed to df['DATA']
+        df, debug_info["norm_time"] = timeit(lambda: pd.DataFrame(list(df["DATA"])))
 
-        df_norm[date_col], debug_info["date_conversion_time"] = timeit(
-            lambda: pd.to_datetime(df_norm[date_col], unit="ms")
-        )
-        grouped, debug_info["grouping_time"] = timeit(
-            lambda: df_norm.set_index(date_col).groupby(pd.Grouper(freq=freq))
-        )
+        df[date_col], debug_info["date_conversion_time"] = timeit(lambda: pd.to_datetime(df[date_col], unit="ms"))
+
+        freq = get_freq_config(df)
+        segment_columns = get_segment_columns_config(df)
+
+        grouped, debug_info["grouping_time"] = timeit(lambda: df.set_index(date_col).groupby(pd.Grouper(freq=freq)))
         debug_info["group_count"] = len(grouped)
 
         if segment_columns is not None:
@@ -55,11 +57,9 @@ class handler:
                 name=",".join(segment_columns), mapper=ColumnMapperFunction(col_names=segment_columns)
             )
 
-            if df_norm[date_col].isna().values.any():
+            if df[date_col].isna().values.any():
                 # TODO document this in the readme
-                raise ValueError(
-                    "Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query."
-                )
+                raise ValueError("Segmentation columns cannot contain null timestamps. Filter null timestamps out of the query.")
 
             multi_column_segments = {segmentation_partition.name: segmentation_partition}
             dataset_schema = DatasetSchema(segments=multi_column_segments)
@@ -71,9 +71,10 @@ class handler:
                 ms_epoch = date_group.timestamp() * 1000
                 ms_epoch_datetime = pd.to_datetime(ms_epoch, unit="ms", utc=True).to_pydatetime()
 
-                result_set, debug_info["profile_time"] = timeit(
-                    lambda: why.log(df_norm.drop(date_col, axis=1), schema=dataset_schema)
-                )
+                # Remove the metadata columns from the dataframe
+                dataframe = drop_metadata_columns(dataframe)
+
+                result_set, debug_info["profile_time"] = timeit(lambda: why.log(dataframe, schema=dataset_schema))
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 views_list: List[SegmentedDatasetProfileView] = result_set.get_writables()
@@ -101,9 +102,10 @@ class handler:
                 ms_epoch = date_group.timestamp() * 1000
                 ms_epoch_datetime = pd.to_datetime(ms_epoch, unit="ms", utc=True).to_pydatetime()
 
+                dataframe = drop_metadata_columns(dataframe)
                 # Log the dataframe with whylogs and create a profile
 
-                result_set, debug_info["profile_time"] = timeit(lambda: why.log(df_norm.drop(date_col, axis=1)))
+                result_set, debug_info["profile_time"] = timeit(lambda: why.log(dataframe))
                 result_set.set_dataset_timestamp(ms_epoch_datetime)
 
                 view: DatasetProfileView = result_set.profile().view()

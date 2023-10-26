@@ -41,6 +41,11 @@ def merge_recursive(filepath: str, base_dir: str, seen: Set[str]) -> str:
 
 
 if __name__ == "__main__":
+    """
+    The output of this script is a giant Python file that contains all the code from the relative import graph
+    of the --entry file. The relative imports do have to be removed from the giant file though, which is what
+    the remove_relative_imports.py script does.
+    """
     parser = argparse.ArgumentParser(description="Merge Python files into one")
     parser.add_argument("--entry", required=True, help="Entry Python file to scan")
     parser.add_argument("--output", required=True, help="Output Python file")
@@ -53,7 +58,6 @@ if __name__ == "__main__":
     seen: Set[str] = set()
 
     merged_content: str = merge_recursive(entry_file, base_dir, seen)
-    merged_content = re.sub(r"^from \..*|^import \..*", "", merged_content, flags=re.M)
 
     with open(output_file, "w") as f:
         f.write(merged_content)
